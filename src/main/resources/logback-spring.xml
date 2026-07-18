@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Define conversion rules -->
+    <conversionRule conversionWord="clr"
+        converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wEx"
+        converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+
+    <!--
+        Human-readable pattern used for local development. Includes the
+        request id (set by RequestTracingFilter) and, once a request is
+        authenticated, the account number - both via MDC - plus the
+        trace/span id injected by Micrometer Tracing, so a single request
+        can be followed end-to-end even across async/Kafka consumer threads.
+    -->
+    <property name="LOG_PATTERN"
+        value="%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%t]){faint} %clr([reqId=%X{requestId:-&#45;} acct=%X{accountNumber:-&#45;} traceId=%X{traceId:-&#45;}]){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}" />
+
+    <!-- Human-readable console appender (default, used for local dev) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!--
+        Structured JSON console appender. Each log line is a single JSON
+        object including MDC fields (requestId, accountNumber, traceId,
+        spanId, httpMethod, httpPath, clientIp, ...), making logs directly
+        ingestible by log aggregators (ELK, Loki, CloudWatch Logs Insights,
+        Datadog, etc.) without any further parsing.
+    -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>accountNumber</includeMdcKeyName>
+            <includeMdcKeyName>httpMethod</includeMdcKeyName>
+            <includeMdcKeyName>httpPath</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <customFields>{"application":"banking-portal-api"}</customFields>
+        </encoder>
+    </appender>
+
+    <!--
+        Default: human-readable console, suitable for local development.
+        Set the Spring profile "json-logs" (e.g. SPRING_PROFILES_ACTIVE=json-logs,prod)
+        to switch the SAME application to structured JSON output instead -
+        no code change or separate build required, just a deployment-time switch.
+    -->
+    <springProfile name="!json-logs">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <springProfile name="json-logs">
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE" />
+        </root>
+    </springProfile>
+</configuration>

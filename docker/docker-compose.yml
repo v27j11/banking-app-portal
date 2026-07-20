@@ -1,4 +1,27 @@
+version: "3.8"
+
 services:
+  app:
+    build: .
+    container_name: bankingportal-app
+    ports:
+      - "8180:8180"
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bankingapp
+      SPRING_DATASOURCE_USERNAME: bankinguser
+      SPRING_DATASOURCE_PASSWORD: bankingpass
+
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - banking-network
+
   mysql:
     image: mysql:8.0
     container_name: bankingportal-mysql
@@ -36,14 +59,16 @@ services:
     ports:
       - "9092:9092"
     environment:
-      # Single-node KRaft mode: no Zookeeper required.
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+
+      # 🔥 FIXED HERE
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1

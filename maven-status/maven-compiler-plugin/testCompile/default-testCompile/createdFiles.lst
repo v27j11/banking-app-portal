@@ -1,0 +1,15 @@
+com\webapp\bankingportal\IdempotencyAspectTests.class
+com\webapp\bankingportal\GreenMailJavaMailSender.class
+com\webapp\bankingportal\TransactionEventConsumerTests.class
+com\webapp\bankingportal\DashboardControllerTests.class
+com\webapp\bankingportal\TokenServiceTests.class
+com\webapp\bankingportal\TestConfig.class
+com\webapp\bankingportal\DashboardServiceTests.class
+com\webapp\bankingportal\AccountControllerTests.class
+com\webapp\bankingportal\BaseTest.class
+com\webapp\bankingportal\CacheServiceTests.class
+com\webapp\bankingportal\GlobalExceptionHandlerTest.class
+com\webapp\bankingportal\RateLimitFilterTests.class
+com\webapp\bankingportal\UserControllerTests.class
+com\webapp\bankingportal\AccountServiceTests.class
+com\webapp\bankingportal\TransactionEventProducerTests.class

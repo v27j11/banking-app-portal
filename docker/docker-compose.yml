@@ -2,9 +2,7 @@ version: "3.8"
 
 services:
   app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    build: .
     container_name: bankingportal-app
     ports:
       - "8180:8180"

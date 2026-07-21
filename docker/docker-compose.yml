@@ -6,21 +6,38 @@ services:
       context: ..
       dockerfile: Dockerfile
     container_name: bankingportal-app
+    restart: unless-stopped
     ports:
       - "8180:8180"
     depends_on:
-      - mysql
-      - redis
-      - kafka
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bankingapp
       SPRING_DATASOURCE_USERNAME: bankinguser
       SPRING_DATASOURCE_PASSWORD: bankingpass
 
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
 
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_KAFKA_CONSUMER_GROUP: banking-portal-notifications
+      SPRING_KAFKA_LISTENER_MISSING_TOPICS_FATAL: "false"
+
+      JWT_SECRET: replace-with-a-long-random-demo-secret
+      JWT_EXPIRATION: 86400000
+
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: example@gmail.com
+      SPRING_MAIL_PASSWORD: dummy-app-password
+
+      GEO_API_URL: https://api.findip.net/
+      GEO_API_KEY: dummy-key
     networks:
       - banking-network
 
@@ -39,6 +56,11 @@ services:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - banking-network
 
@@ -51,6 +73,11 @@ services:
     volumes:
       - ./redis/data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - banking-network
 
@@ -64,10 +91,7 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-
-      # 🔥 FIXED HERE
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -79,6 +103,11 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
       - ./kafka/data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
     networks:
       - banking-network
 
